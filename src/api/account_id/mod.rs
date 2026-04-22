@@ -17,14 +17,6 @@ impl<'a> AccountIdApi<'a> {
         self.client.post("/cgi-bin/userid/translate", req).await
     }
 
-    /// 邮箱/手机号获取 userid POST /cgi-bin/user/get_userid
-    pub async fn get_userid_by_email_or_mobile(
-        &self,
-        req: &serde_json::Value,
-    ) -> Result<serde_json::Value> {
-        self.client.post("/cgi-bin/user/get_userid", req).await
-    }
-
     /// openid 转换 userid POST /cgi-bin/user/convert_to_userid
     pub async fn convert_to_userid(&self, openid: &str) -> Result<ConvertToUseridResponse> {
         let body = serde_json::json!({ "openid": openid });

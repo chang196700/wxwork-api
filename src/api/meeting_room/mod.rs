@@ -12,16 +12,6 @@ impl<'a> MeetingRoomApi<'a> {
         Self { client }
     }
 
-    /// 会议室管理 - 通用 POST
-    pub async fn post(&self, path: &str, req: &serde_json::Value) -> Result<serde_json::Value> {
-        self.client.post(path, req).await
-    }
-
-    /// 会议室管理 - 通用 GET
-    pub async fn get(&self, path: &str, query: &[(&str, &str)]) -> Result<serde_json::Value> {
-        self.client.get(path, query).await
-    }
-
     /// 获取会议室列表 POST /cgi-bin/oa/meetingroom/list
     pub async fn list_rooms(&self, req: &serde_json::Value) -> Result<serde_json::Value> {
         self.client.post("/cgi-bin/oa/meetingroom/list", req).await

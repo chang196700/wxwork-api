@@ -344,89 +344,56 @@
 
 ---
 
-## 三、实现与文档不符 / 已知问题
+## 三、实现与文档不符 / 已知问题（已全部修复）
 
-### 3.1 注释错误
+### 3.1 ✅ 注释错误（已修复）
 
-**文件：** `src/api/security/mod.rs` 第 16 行
+**文件：** `src/api/security/mod.rs`
 
-```rust
-// ❌ 注释写的是"获取企业微信域名 IP 信息"
-/// 获取企业微信域名 IP 信息 GET /cgi-bin/security/get_anti_phishing_key
-pub async fn get_anti_phishing_key(&self) -> Result<AntiPhishingKeyResponse>
-```
-
-该接口文档名为 **"获取防钓鱼密钥"**，注释应修改为：`获取防钓鱼密钥 GET /cgi-bin/security/get_anti_phishing_key`
+`get_anti_phishing_key` 的注释已从"获取企业微信域名 IP 信息"改为"获取防钓鱼密钥"。
 
 ---
 
-### 3.2 接口定位混淆（member vs identity 重复）
+### 3.2 ✅ 接口定位混淆（已修复）
 
-**文件：** `src/api/contacts/member.rs` 第 107 行
+**文件：** `src/api/contacts/member.rs`
 
-```rust
-/// 获取手机号随机串（登录二次验证）GET /cgi-bin/user/getuserinfo
-pub async fn get_user_info(&self, code: &str) -> Result<UserInfoResponse>
-```
-
-- 此接口 `/cgi-bin/user/getuserinfo` 在文档中属于 **"身份验证 - 网页授权登录"** 模块（获取访问用户身份）
-- `identity.rs` 中已有完全相同的 `get_user_info` 函数调用同一端点
-- `member.rs` 中的命名注释"手机号随机串（登录二次验证）"与该端点实际功能不符
-- **结果：** 同一接口在两个模块中重复实现，且 `member.rs` 中注释描述错误
+- 已从 `MemberApi` 移除重复的 `get_user_info`（`/cgi-bin/user/getuserinfo`），该接口属于身份验证模块，已由 `identity.rs` 正确实现
+- 同步移除了仅被该方法使用的 `UserInfoResponse` 类型
 
 ---
 
-### 3.3 account_id 中接口与通讯录文档端点不一致
+### 3.3 ✅ 缺失的通讯录 userid 查询接口（已修复）
 
-**文件：** `src/api/account_id/mod.rs` 第 20-26 行
+**文件：** `src/api/contacts/member.rs`，`src/api/account_id/mod.rs`
 
-```rust
-/// 邮箱/手机号获取 userid POST /cgi-bin/user/get_userid
-pub async fn get_userid_by_email_or_mobile(...)
-```
-
-- `account_id` 模块使用 `/cgi-bin/user/get_userid`（账号 ID 转换专用接口）
-- 通讯录文档中 **"邮箱获取 userid"** 使用的是 `POST /cgi-bin/user/get_userid_by_email`
-- 通讯录文档中 **"手机号获取 userid"** 使用的是 `POST /cgi-bin/user/getuserid`
-- **以上三个是不同的端点**，当前 `account_id` 代码并不能替代 `member` 中缺失的两个通讯录接口
+- 已在 `MemberApi` 中新增 `get_userid_by_mobile` (`POST /cgi-bin/user/getuserid`)
+- 已在 `MemberApi` 中新增 `get_userid_by_email` (`POST /cgi-bin/user/get_userid_by_email`)
+- 已从 `AccountIdApi` 移除命名误导、端点无文档依据的 `get_userid_by_email_or_mobile`
 
 ---
 
-### 3.4 data_intel 与 checkin 接口重复
+### 3.4 ✅ data_intel 与 checkin 接口重复（已修复）
 
-**文件：** `src/api/data_intel/mod.rs` 第 24-34 行
+**文件：** `src/api/data_intel/mod.rs`
 
-```rust
-/// 获取打卡数据 POST /cgi-bin/checkin/getcheckindata
-pub async fn get_checkin_data(...)
-
-/// 获取打卡日报 POST /cgi-bin/checkin/getcheckin_daydata
-pub async fn get_checkin_day_data(...)
-```
-
-`checkin.rs` 中已实现这两个接口，`data_intel.rs` 中再次重复实现，造成维护混乱。
+已移除 `data_intel` 中重复的 `get_checkin_data`、`get_checkin_day_data`、`get_checkin_month_data` 以及通用 `post()`/`get()` 方法。打卡接口应统一通过 `checkin()` 调用。
 
 ---
 
-### 3.5 live 模块暴露通用方法，设计不一致
+### 3.5 ✅ 暴露通用方法，设计不一致（已修复）
 
-**文件：** `src/api/live/mod.rs`
+**文件：** `src/api/live/mod.rs`、`src/api/meeting_room/mod.rs`、`src/api/advanced_feat/mod.rs`
 
-`live.rs` 中同时存在：
-- 通用 `pub async fn post(...)` 方法
-- 具体的业务函数（`create`, `modify`, `cancel` 等）
-
-这与其他模块（如 `approval`, `checkin`）仅暴露具体业务方法的设计不一致，容易导致调用方绕过类型约束直接使用通用接口。`mail.rs`, `meeting_room.rs`, `advanced_feat.rs` 同样存在此问题。
+已从上述模块移除绕过类型约束的通用 `post()`/`get()` 方法，与 `approval`、`checkin` 等模块风格一致。
 
 ---
 
-### 3.6 缺失接口汇总
+### 3.6 仍缺失的接口
 
 | 模块 | 缺失接口 | 文档端点 |
 |------|----------|----------|
 | `contacts/member` | 邀请成员 | `POST /cgi-bin/batch/invite` |
-| `contacts/member` | 手机号获取 userid | `POST /cgi-bin/user/getuserid` |
-| `contacts/member` | 邮箱获取 userid | `POST /cgi-bin/user/get_userid_by_email` |
 | `material` | 异步上传临时素材 | `POST /cgi-bin/media/upload_by_url` |
 | `material` | 查询异步上传结果 | `POST /cgi-bin/media/get_upload_by_url_result` |
 | `material` | 获取高清语音素材 | `GET /cgi-bin/media/get/jssdk` |
@@ -436,10 +403,6 @@ pub async fn get_checkin_day_data(...)
 | `account_id` | external_userid 转换（自建对接） | `POST /cgi-bin/externalcontact/from_service_external_userid` |
 | `identity` | 企业微信 Web 登录 | `POST /cgi-bin/auth/getuserinfo` |
 | `security` | 设置防泄漏规则 | `POST /cgi-bin/dlp/set_conf` |
-| `mail` | 发送邮件 | `POST /cgi-bin/mail/send_mail` |
-| `mail` | 管理公共邮箱（多接口） | `/cgi-bin/mail/group/*` |
-| `mail` | 管理应用邮箱账号（多接口） | `/cgi-bin/mail/account/*` |
-| `mail` | 获取接收的邮件 | `/cgi-bin/mail/*` |
 | `advanced_feat` | 批量获取申请单 ID | `POST /cgi-bin/oa/approval/batch_get_application` |
 | `advanced_feat` | 获取申请单详细信息 | `POST /cgi-bin/oa/approval/get_application_detail` |
 | `advanced_feat` | 设置审批单审批信息 | `POST /cgi-bin/oa/approval/set_approval_info` |
@@ -452,6 +415,6 @@ pub async fn get_checkin_day_data(...)
 
 | 类型化程度 | 模块 |
 |-----------|------|
-| **完全类型化**（请求/响应均有 Struct） | `contacts/*`, `message/send`, `message/group`, `agent`, `approval`（部分）, `identity`, `material` |
+| **完全类型化**（请求/响应均有 Struct） | `contacts/*`, `message/send`, `message/group`, `agent`, `approval`（部分）, `identity`, `material`, `mail` |
 | **部分类型化**（请求或响应之一有 Struct） | `auth`, `approval`, `meeting`, `checkin`, `calendar`, `excontact`, `wechat_cs`, `security`, `upstream`, `invoice` |
-| **通用 JSON**（全部使用 Value） | `advanced_feat`, `alert`, `data_intel`, `hr`, `phone`, `report`, `school`, `interconnect`, `live`（混合）, `mail`（混合）, `meeting_room`（混合） |
+| **通用 JSON**（全部使用 Value） | `alert`, `data_intel`（空壳）, `hr`, `phone`, `report`, `school`, `interconnect`, `live`（混合）, `meeting_room`（混合）, `advanced_feat`（空壳） |

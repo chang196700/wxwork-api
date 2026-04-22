@@ -13,7 +13,7 @@ impl<'a> SecurityApi<'a> {
         Self { client }
     }
 
-    /// 获取企业微信域名 IP 信息 GET /cgi-bin/security/get_anti_phishing_key
+    /// 获取防钓鱼密钥 GET /cgi-bin/security/get_anti_phishing_key
     pub async fn get_anti_phishing_key(&self) -> Result<AntiPhishingKeyResponse> {
         self.client.get("/cgi-bin/security/get_anti_phishing_key", &[]).await
     }

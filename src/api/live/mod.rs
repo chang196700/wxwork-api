@@ -12,10 +12,6 @@ impl<'a> LiveApi<'a> {
         Self { client }
     }
 
-    pub async fn post(&self, path: &str, req: &serde_json::Value) -> Result<serde_json::Value> {
-        self.client.post(path, req).await
-    }
-
     /// 创建直播 POST /cgi-bin/living/create
     pub async fn create(&self, req: &serde_json::Value) -> Result<serde_json::Value> {
         self.client.post("/cgi-bin/living/create", req).await

@@ -103,17 +103,27 @@ impl<'a> MemberApi<'a> {
         self.client.get("/cgi-bin/corp/get_join_qrcode", &query).await
     }
 
-    /// 获取手机号随机串（登录二次验证）GET /cgi-bin/user/getuserinfo
-    pub async fn get_user_info(&self, code: &str) -> Result<UserInfoResponse> {
-        self.client
-            .get("/cgi-bin/user/getuserinfo", &[("code", code)])
-            .await
-    }
-
     /// userid 与 openid 互换 POST /cgi-bin/user/convert_to_openid
     pub async fn convert_to_openid(&self, userid: &str) -> Result<OpenidResponse> {
         let body = serde_json::json!({ "userid": userid });
         self.client.post("/cgi-bin/user/convert_to_openid", &body).await
+    }
+
+    /// 手机号获取 userid POST /cgi-bin/user/getuserid
+    pub async fn get_userid_by_mobile(&self, mobile: &str) -> Result<GetUseridResponse> {
+        let body = serde_json::json!({ "mobile": mobile });
+        self.client.post("/cgi-bin/user/getuserid", &body).await
+    }
+
+    /// 邮箱获取 userid POST /cgi-bin/user/get_userid_by_email
+    ///
+    /// `email_type`: 1-企业邮箱（默认）；2-个人邮箱
+    pub async fn get_userid_by_email(&self, email: &str, email_type: Option<u8>) -> Result<GetUseridResponse> {
+        let mut body = serde_json::json!({ "email": email });
+        if let Some(t) = email_type {
+            body["email_type"] = serde_json::json!(t);
+        }
+        self.client.post("/cgi-bin/user/get_userid_by_email", &body).await
     }
 }
 
@@ -296,20 +306,17 @@ pub struct JoinQrcodeResponse {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UserInfoResponse {
-    pub errcode: i32,
-    pub errmsg: String,
-    pub userid: Option<String>,
-    pub user_ticket: Option<String>,
-    pub expires_in: Option<u64>,
-    pub open_userid: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct OpenidResponse {
     pub errcode: i32,
     pub errmsg: String,
     pub openid: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GetUseridResponse {
+    pub errcode: i32,
+    pub errmsg: String,
+    pub userid: Option<String>,
 }
 
 // ============ Shared types ============
